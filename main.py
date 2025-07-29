@@ -1,83 +1,46 @@
 from flask import Flask, request, jsonify
-from scrapling.fetchers import PlayWrightFetcher
-import subprocess
-import os
+import scrapy
+from scrapy.crawler import CrawlerProcess
+from scrapy.http import Request
+import requests
+from io import StringIO
+import sys
 
 app = Flask(__name__)
 
-def initialize_playwright():
-    try:
-        print("Installing Playwright browsers...")
-        result = subprocess.run(['playwright', 'install'], 
-                              check=True, 
-                              capture_output=True, 
-                              text=True, 
-                              timeout=300)
-        print("Playwright browsers installed successfully")
-        print(f"Output: {result.stdout}")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Playwright installation failed: {e}")
-        print(f"Error output: {e.stderr}")
-        return False
-    except subprocess.TimeoutExpired:
-        print("Playwright installation timed out")
-        return False
-    except FileNotFoundError:
-        print("Playwright not found in PATH")
-        return False
-
-playwright_ready = initialize_playwright()
+class SimpleSpider(scrapy.Spider):
+    name = 'simple'
+    
+    def __init__(self, url=None, *args, **kwargs):
+        super(SimpleSpider, self).__init__(*args, **kwargs)
+        self.start_urls = [url] if url else []
+        self.html_content = ""
+    
+    def parse(self, response):
+        self.html_content = response.text
+        return {'html': response.text}
 
 @app.route("/fetch", methods=["GET"])
 def fetch_html():
-    global playwright_ready
-    
     url = request.args.get("url")
     if not url:
         return jsonify({"error": "url 파라미터가 필요해요"}), 400
     
-    if not playwright_ready:
-        return jsonify({"error": "Playwright is not initialized. Please try again later."}), 503
-    
     try:
-        page = PlayWrightFetcher.fetch(
-            url,
-            headless=True,
-            network_idle=True,
-            stealth=True,
-            hide_canvas=True,
-            disable_webgl=True,
-            google_search=True,
-            timeout=30000
-        )
-        html = page.body
-        return jsonify({"html": html})
-    except Exception as e:
-        error_msg = str(e)
-        if "Executable doesn't exist" in error_msg or "playwright install" in error_msg:
-            playwright_ready = initialize_playwright()
-            if playwright_ready:
-                try:
-                    page = PlayWrightFetcher.fetch(
-                        url,
-                        headless=True,
-                        network_idle=True,
-                        stealth=True,
-                        hide_canvas=True,
-                        disable_webgl=True,
-                        google_search=True,
-                        timeout=30000
-                    )
-                    html = page.body
-                    return jsonify({"html": html})
-                except Exception as retry_e:
-                    return jsonify({"error": f"Retry failed: {str(retry_e)}"}), 500
-        return jsonify({"error": error_msg}), 500
+        # requests를 사용한 간단한 방법 (Scrapy는 비동기라서 Flask와 함께 사용하기 복잡함)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=30)
+        response.raise_for_status()
+        
+        return jsonify({"html": response.text})
+    except requests.exceptions.RequestException as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/")
 def home():
-    return "✅ Scrapling REST API is running!"
+    return "✅ Scrapy REST API is running!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
