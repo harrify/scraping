@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from scrapling import Scraper
+from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
 
 app = Flask(__name__)
 
@@ -10,8 +10,8 @@ def fetch_html():
         return jsonify({"error": "url 파라미터가 필요해요"}), 400
 
     try:
-        scraper = Scraper(url)
-        html = scraper.html
+        scraper = StealthyFetcher.fetch(url, headless=True, network_idle=True)
+        html = page.body  
         return jsonify({"html": html})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
