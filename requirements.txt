@@ -3,3 +3,8 @@ scrapy
 requests
 requests-html
 pyppeteer
+undetected-chromedriver
+selenium
+selenium-stealth
+fake-useragent
+cloudscraper
