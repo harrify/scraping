@@ -33,6 +33,8 @@ camoufox_ready = initialize_camoufox()
 
 @app.route("/fetch", methods=["GET"])
 def fetch_html():
+    global camoufox_ready
+    
     url = request.args.get("url")
     if not url:
         return jsonify({"error": "url 파라미터가 필요해요"}), 400
@@ -47,7 +49,6 @@ def fetch_html():
     except Exception as e:
         error_msg = str(e)
         if "version.json" in error_msg and "camoufox fetch" in error_msg:
-            global camoufox_ready
             camoufox_ready = initialize_camoufox()
             if camoufox_ready:
                 try:
