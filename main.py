@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from scrapling import Scrapling
+from scrapling import Scraper
 
 app = Flask(__name__)
 
@@ -10,15 +10,15 @@ def fetch_html():
         return jsonify({"error": "url 파라미터가 필요해요"}), 400
 
     try:
-        scrapling = Scrapling(url)
-        html = scrapling.html
+        scraper = Scraper(url)
+        html = scraper.html
         return jsonify({"html": html})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 @app.route("/")
 def home():
-    return "✅ Scrapling Flask API is running!"
+    return "✅ Scrapling REST API is running!"
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)
