@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from scrapling.fetchers import Fetcher, AsyncFetcher, StealthyFetcher, PlayWrightFetcher
+from scrapling.fetchers import StealthyFetcher
 
 app = Flask(__name__)
 
