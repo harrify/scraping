@@ -4,9 +4,3 @@ crawlee
 beautifulsoup4
 requests
 fake-useragent
-random-header
-argparse
-json
-csv
-logging
-configparser
