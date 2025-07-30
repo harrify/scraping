@@ -1,0 +1,30 @@
+{
+  "crawler_settings": {
+    "delay_range": [2, 5],
+    "max_retries": 3,
+    "timeout": 30,
+    "use_proxies": false,
+    "proxy_list": []
+  },
+  "default_selectors": {
+    "title": "title",
+    "description": "meta[name=\"description\"]",
+    "keywords": "meta[name=\"keywords\"]",
+    "h1": "h1:first-of-type",
+    "h2": "h2:first-of-type",
+    "main_content": "main, article, .content, #content",
+    "links": "a[href]",
+    "images": "img[src]"
+  },
+  "output_settings": {
+    "format": "json",
+    "file_path": "results",
+    "include_links": true,
+    "max_links": 20
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "scraper.log",
+    "console": true
+  }
+}
