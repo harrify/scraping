@@ -44,6 +44,7 @@ class ScrapeRequest(BaseModel):
     delay_range: Optional[List[float]] = None
     max_retries: Optional[int] = None
     timeout: Optional[int] = None
+    return_html: Optional[bool] = False
 
 
 class BatchScrapeRequest(BaseModel):
@@ -128,7 +129,36 @@ async def stealth_scrape(request: Request, scrape_req: ScrapeRequest) -> dict:
         # Create custom crawler instance if needed
         stealth_crawler = request.state.stealth_crawler
         
-        # Default selectors
+        # If return_html is True, return full HTML content
+        if scrape_req.return_html:
+            # Add random delay
+            await loop.run_in_executor(
+                request.state.executor,
+                stealth_crawler._random_delay
+            )
+            
+            # Fetch raw HTML
+            html_content = await loop.run_in_executor(
+                request.state.executor,
+                stealth_crawler.fetch_raw_html,
+                scrape_req.url
+            )
+            
+            if html_content:
+                return {
+                    'success': True,
+                    'url': scrape_req.url,
+                    'html': html_content,
+                    'html_length': len(html_content)
+                }
+            else:
+                return {
+                    'success': False,
+                    'url': scrape_req.url,
+                    'error': 'Failed to fetch HTML content'
+                }
+        
+        # Default behavior - structured data extraction
         selectors = scrape_req.selectors or {
             'title': 'title',
             'description': 'meta[name="description"]',

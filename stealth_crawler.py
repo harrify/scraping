@@ -91,6 +91,41 @@ class StealthCrawler:
         
         return None
     
+    def fetch_raw_html(self, url: str) -> Optional[str]:
+        """Fetch raw HTML content without parsing"""
+        if url in self.visited_urls:
+            return None
+        
+        for attempt in range(self.max_retries):
+            try:
+                self.session.headers['User-Agent'] = self._get_random_user_agent()
+                
+                proxies = self._get_random_proxy()
+                
+                response = self.session.get(
+                    url,
+                    proxies=proxies,
+                    timeout=self.timeout,
+                    allow_redirects=True
+                )
+                
+                response.raise_for_status()
+                
+                self.visited_urls.add(url)
+                
+                return response.text
+                
+            except requests.exceptions.RequestException as e:
+                print(f"Attempt {attempt + 1} failed for {url}: {e}")
+                if attempt < self.max_retries - 1:
+                    self._random_delay()
+                    continue
+                else:
+                    print(f"Failed to fetch {url} after {self.max_retries} attempts")
+                    return None
+        
+        return None
+    
     def extract_data(self, soup: BeautifulSoup, selectors: Dict[str, str]) -> Dict[str, str]:
         data = {}
         
