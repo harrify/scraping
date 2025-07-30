@@ -9,7 +9,7 @@ from starlette.responses import HTMLResponse
 
 import crawlee
 
-from .crawler import lifespan
+from crawler import lifespan
 
 app = FastAPI(lifespan=lifespan, title='Crawler app')
 
