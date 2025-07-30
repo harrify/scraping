@@ -1,7 +1,9 @@
 fastapi
 uvicorn[standard]
+gunicorn
 crawlee
 parsel
 beautifulsoup4
 requests
 fake-useragent
+pydantic

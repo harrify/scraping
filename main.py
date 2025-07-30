@@ -4,8 +4,10 @@ import asyncio
 from uuid import uuid4
 from typing import Dict, List, Optional
 import json
+import os
 
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -14,7 +16,26 @@ import crawlee
 
 from crawler import lifespan
 
-app = FastAPI(lifespan=lifespan, title='Stealth Crawler API')
+# Environment detection
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
+
+app = FastAPI(
+    lifespan=lifespan, 
+    title='Stealth Crawler API',
+    description="Production-ready stealth web scraper API",
+    version="1.0.0",
+    docs_url="/docs" if ENVIRONMENT != "production" else None,
+    redoc_url="/redoc" if ENVIRONMENT != "production" else None
+)
+
+# CORS middleware for cross-origin requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class ScrapeRequest(BaseModel):
@@ -61,7 +82,13 @@ def index() -> str:
 
 @app.get('/health')
 async def health_check():
-    return {'status': 'healthy', 'service': 'stealth-crawler-api'}
+    """Health check endpoint for Render monitoring"""
+    return {
+        'status': 'healthy', 
+        'service': 'stealth-crawler-api',
+        'environment': ENVIRONMENT,
+        'version': '1.0.0'
+    }
 
 
 @app.get('/scrape')

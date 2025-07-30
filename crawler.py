@@ -27,11 +27,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     # Results will be stored in this dictionary
     requests_to_results = dict[str, asyncio.Future[dict[str, str]]]()
 
-    # Initialize stealth crawler
+    # Initialize stealth crawler with production-optimized settings
     stealth_crawler = StealthCrawler(
-        delay_range=(1, 3),
-        max_retries=3,
-        timeout=30
+        delay_range=(0.5, 2.0),  # Faster for production
+        max_retries=2,           # Reduced retries for performance
+        timeout=20               # Shorter timeout for Render
     )
     
     # Thread pool for running sync stealth crawler
