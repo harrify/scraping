@@ -30,12 +30,19 @@ class StealthCrawler:
     
     def _setup_headers(self):
         headers = {
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+            'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'DNT': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
+            'Cache-Control': 'max-age=0',
+            'sec-ch-ua': '"Google Chrome";v="119", "Chromium";v="119", "Not?A_Brand";v="24"',
+            'sec-ch-ua-mobile': '?0',
+            'sec-ch-ua-platform': '"macOS"',
         }
         self.session.headers.update(headers)
     
@@ -92,22 +99,34 @@ class StealthCrawler:
         return None
     
     def fetch_raw_html(self, url: str) -> Optional[str]:
-        """Fetch raw HTML content without parsing"""
-        if url in self.visited_urls:
-            return None
-        
+        """Fetch raw HTML content without parsing"""        
         for attempt in range(self.max_retries):
             try:
-                self.session.headers['User-Agent'] = self._get_random_user_agent()
+                # Update headers for each request
+                self.session.headers.update({
+                    'User-Agent': self._get_random_user_agent(),
+                    'Referer': 'https://www.google.com/',
+                    'Origin': 'https://www.skyscanner.co.kr' if 'skyscanner' in url else None
+                })
+                
+                # Remove None values
+                self.session.headers = {k: v for k, v in self.session.headers.items() if v is not None}
                 
                 proxies = self._get_random_proxy()
+                
+                # Add random delay before request
+                self._random_delay()
                 
                 response = self.session.get(
                     url,
                     proxies=proxies,
                     timeout=self.timeout,
-                    allow_redirects=True
+                    allow_redirects=True,
+                    verify=True
                 )
+                
+                print(f"Response status: {response.status_code}")
+                print(f"Response headers: {dict(response.headers)}")
                 
                 response.raise_for_status()
                 
@@ -117,8 +136,16 @@ class StealthCrawler:
                 
             except requests.exceptions.RequestException as e:
                 print(f"Attempt {attempt + 1} failed for {url}: {e}")
+                if hasattr(e.response, 'status_code'):
+                    print(f"Status code: {e.response.status_code}")
+                    if e.response.status_code == 403:
+                        print("Access forbidden - likely bot detection")
+                    elif e.response.status_code == 503:
+                        print("Service unavailable - rate limited")
+                
                 if attempt < self.max_retries - 1:
-                    self._random_delay()
+                    # Longer delay on failure
+                    time.sleep(random.uniform(3, 8))
                     continue
                 else:
                     print(f"Failed to fetch {url} after {self.max_retries} attempts")
